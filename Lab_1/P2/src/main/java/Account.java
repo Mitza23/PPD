@@ -27,9 +27,9 @@ class Account {
         try {
             from.lock.lock();
             try {
-                if (from.amount > value) {
-                    this.logTransaction(from, value);
-                    from.logTransaction(this, -value);
+                if (from.amount >= value) {
+                    this.logTransaction(from, -value);
+                    from.logTransaction(this, value);
                     from.amount -= value;
                     amount += value;
                 }

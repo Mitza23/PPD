@@ -37,11 +37,17 @@ class Bank {
     }
 
     public void verify() {
+        int total = 0;
         for (var a : accounts) {
+            System.out.println(a);
+            total += a.amount;
             for (var log : a.logs) {
                 System.out.println("\t" + a + " -> " + log);
             }
             System.out.println(a.verify());
+        }
+        if(total == accountCount * 1000) {
+            System.out.println("No money lost");
         }
     }
 }
