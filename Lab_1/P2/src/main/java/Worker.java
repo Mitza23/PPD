@@ -11,10 +11,10 @@ class Worker extends Thread {
     }
 
     public void work() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1000; i++) {
             int from = ThreadLocalRandom.current().nextInt(0, accountCount);
             int to = ThreadLocalRandom.current().nextInt(0, accountCount);
-            int value = ThreadLocalRandom.current().nextInt(10, 300);
+            int value = ThreadLocalRandom.current().nextInt(1, 10);
             accounts.get(to).transfer(accounts.get(from), value);
         }
     }

@@ -5,7 +5,9 @@ class Bank {
     public List<Account> accounts;
     public List<Thread> threads;
 
-    public int accountCount = 100;
+    public Thread checker;
+
+    public int accountCount = 1000;
     public int threadCount = 20;
 
     public Bank() {
@@ -17,10 +19,12 @@ class Bank {
         for (int i = 0; i < threadCount; i++) {
             threads.add(new Worker(accountCount, accounts));
         }
+        checker = new Checker(accountCount, accounts);
     }
 
     public void work() {
         threads.forEach(Thread::start);
+        checker.start();
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -33,6 +37,7 @@ class Bank {
                 throw new RuntimeException(e);
             }
         });
+        checker.interrupt();
 
     }
 
@@ -46,7 +51,7 @@ class Bank {
             }
             System.out.println(a.verify());
         }
-        if(total == accountCount * 1000) {
+        if(total == accountCount * 10000) {
             System.out.println("No money lost");
         }
     }

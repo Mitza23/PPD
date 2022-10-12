@@ -13,7 +13,7 @@ class Account {
     public Account() {
         id = count;
         count += 1;
-        amount = 1000;
+        amount = 10000;
         lock = new ReentrantLock();
         logs = new ArrayList<>();
     }
@@ -23,9 +23,19 @@ class Account {
     }
 
     public void transfer(Account from, int value) {
-        this.lock.lock();
+        Account small;
+        Account big;
+        if(this.id < from.id) {
+            small = this;
+            big = from;
+        }
+        else {
+            small = from;
+            big = this;
+        }
+        small.lock.lock();
         try {
-            from.lock.lock();
+            big.lock.lock();
             try {
                 if (from.amount >= value) {
                     this.logTransaction(from, -value);
@@ -34,11 +44,17 @@ class Account {
                     amount += value;
                 }
             } finally {
-                from.lock.unlock();
+                big.lock.unlock();
             }
         } finally {
-            this.lock.unlock();
+            small.lock.unlock();
         }
+//        if (from.amount >= value) {
+//            this.logTransaction(from, -value);
+//            from.logTransaction(this, value);
+//            from.amount -= value;
+//            amount += value;
+//        }
     }
 
     public boolean verify() {
@@ -46,7 +62,7 @@ class Account {
         for (var log : logs) {
             total += log.value;
         }
-        return total == 1000;
+        return total == 10000;
     }
 
     @Override
