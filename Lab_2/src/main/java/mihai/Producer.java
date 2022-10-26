@@ -14,7 +14,7 @@ public class Producer extends Thread{
         v1 = new int[size];
         v2 = new int[size];
         for(int i = 0 ; i < size ; i++) {
-            v1[i] = i;
+            v1[i] = i + 1;
             v2[i] = 1;
         }
     }

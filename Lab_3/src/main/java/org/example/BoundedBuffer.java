@@ -1,26 +1,35 @@
-package mihai;
+package org.example;
 
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class BoundedBuffer {
+class BoundedBuffer<T> {
     final Lock lock = new ReentrantLock();
     final Condition notFull  = lock.newCondition();
     final Condition notEmpty = lock.newCondition();
 
-    final int[] items = new int[10];
+    int size;
+    List<T> items;
     int putptr, takeptr, count;
 
-    public void put(int x) throws InterruptedException {
+    public BoundedBuffer(int size) {
+        this.size = size;
+        for(int i = 0 ; i < size ; i++) {
+            items.add(null);
+        }
+    }
+
+    public void put(T x) throws InterruptedException {
         lock.lock();
         try {
-            while (count == items.length)
+            while (count == size)
                 notFull.await();
-            items[putptr] = x;
+            items.set(putptr, x);
             putptr += 1;
             count += 1;
-            if(putptr == items.length) {
+            if(putptr == size) {
                 putptr = 0;
             }
             if(count > 0) {
@@ -31,14 +40,14 @@ class BoundedBuffer {
         }
     }
 
-    public int take() throws InterruptedException {
+    public T take() throws InterruptedException {
         lock.lock();
         try {
             while (count == 0)
                 notEmpty.await();
-            int x = items[takeptr];
+            T x = items.get(takeptr);
             takeptr += 1;
-            if(takeptr == items.length){
+            if(takeptr == size){
                 takeptr = 0;
             }
             count -= 1;
