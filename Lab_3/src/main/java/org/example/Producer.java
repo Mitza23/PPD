@@ -9,13 +9,13 @@ public class Producer extends Thread{
     int n;
     BoundedBuffer<Pair<Integer, Integer>> buffer;
 
-    public Producer(int m, int k, int n, BoundedBuffer<Pair<Integer, Integer>> buffer) {
+    public Producer(int[][] a, int[][] b, int m, int k, int n, BoundedBuffer<Pair<Integer, Integer>> buffer) {
+        this.a = a;
+        this.b = b;
         this.m = m;
         this.k = k;
         this.n = n;
         this.buffer = buffer;
-        a =  new int[m][k];
-        b = new int[k][n];
         for(int i = 0 ; i < m ; i++) {
             for(int j = 0 ; j < k ; j++) {
                 a[i][j] = 1;
@@ -28,8 +28,7 @@ public class Producer extends Thread{
         }
     }
 
-    @Override
-    public void run() {
+    public void generate() {
         for(int i = 0 ; i < m ; i++) {
             for(int j = 0 ; j < n ; j++) {
                 try {
@@ -39,5 +38,10 @@ public class Producer extends Thread{
                 }
             }
         }
+    }
+
+    @Override
+    public void run() {
+       generate();
     }
 }
