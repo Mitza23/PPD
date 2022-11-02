@@ -1,5 +1,6 @@
 package org.example;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -16,6 +17,7 @@ class BoundedBuffer<T> {
 
     public BoundedBuffer(int size) {
         this.size = size;
+        this.items = new ArrayList<>();
         for(int i = 0 ; i < size ; i++) {
             items.add(null);
         }
