@@ -2,8 +2,7 @@ package org.example;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.*;
 
 public class Main {
     public static void sequentialRow(int m, int k, int n, int a[][], int b[][], int c[][], CyclicBarrier barrier,
@@ -40,18 +39,29 @@ public class Main {
 
     public static void alternative(int m, int k, int n, int a[][], int b[][], int c[][], CyclicBarrier barrier,
                                    int threadCount) {
+        ExecutorService executorService = Executors.newFixedThreadPool(2*threadCount);
         List<BoundedBuffer<Pair<Integer, Integer>>> buffers = new ArrayList<>();
         int elementCount = m * n / threadCount;
         for (int i = 0; i < threadCount; i++) {
             var buffer = new BoundedBuffer<Pair<Integer, Integer>>(10);
             buffers.add(buffer);
             AlternativeProducer producer = new AlternativeProducer(m, n, buffer, elementCount, i, threadCount);
-            producer.start();
+            executorService.submit(producer);
+//            producer.start();
         }
+
         for (int i = 0; i < threadCount; i++) {
             Consumer consumer = new Consumer(a, b, c, m, k, n, buffers.get(i), elementCount, barrier);
-            consumer.start();
+//            consumer.start();
+            executorService.submit(consumer);
         }
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static void main(String[] args) {
@@ -74,12 +84,17 @@ public class Main {
 
         int threadCount = 5;
         CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
+        Long start = System.currentTimeMillis();
         alternative(m, k, n, a, b, c, barrier, threadCount);
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
-        }
+//        sequentialColumn(m, k, n, a, b, c, barrier, threadCount);
+//        sequentialRow(m, k, n, a, b, c, barrier, threadCount);
+        Long end = System.currentTimeMillis();
+        System.out.println("Time elapsed: " + (end - start));
+//        try {
+//            barrier.await();
+//        } catch (InterruptedException | BrokenBarrierException e) {
+//            throw new RuntimeException(e);
+//        }
 
         int s = 0;
         for (int i = 0; i < m; i++) {

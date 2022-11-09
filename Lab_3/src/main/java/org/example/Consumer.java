@@ -48,10 +48,10 @@ public class Consumer extends Thread {
         while (elements > 0) {
             compute();
         }
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            barrier.await();
+//        } catch (InterruptedException | BrokenBarrierException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 }
