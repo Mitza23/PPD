@@ -7,90 +7,153 @@ namespace PolynomialMultiplication
     {
         static void Main(string[] args)
         {
-            // Define the coefficients of the two polynomials to be multiplied
-            int[] a = { 1, 2, 3 }; // x^2 + 2x + 3
-            int[] b = { 4, 5, 6 }; // 4x^2 + 5x + 6
 
-            // Calculate the product of the two polynomials using the Karatsuba algorithm
-            int[] product = MultiplyPolynomials(a, b);
+            // Convert the coefficients to integers
+            int[] intCoefficients1 = new int[] { 1, 1, 1};
+
+            // Convert the coefficients to integers
+            int[] intCoefficients2 = new int[] { 0, 0, 1 };
+
+            // Calculate the result of multiplying the two polynomials
+            int[] result = MultiplyPolynomials(intCoefficients1, intCoefficients2);
 
             // Print the result
-            Console.Write("Product: ");
-            for (int i = 0; i < product.Length; i++)
+            Console.WriteLine("The result is: ");
+            for (int i = 0; i < result.Length; i++)
             {
-                Console.Write(product[i] + "x^" + i + " + ");
+                Console.Write(result[i] + " ");
             }
+            Console.WriteLine();
         }
 
-        // Function to multiply two polynomials using the Karatsuba algorithm in parallel
-        static int[] MultiplyPolynomials(int[] a, int[] b)
+        static int[] MultiplyPolynomials(int[] coefficients1, int[] coefficients2)
         {
-            // Make sure the arrays have the same length
-            int n = Math.Max(a.Length, b.Length);
-            Array.Resize(ref a, n);
-            Array.Resize(ref b, n);
 
-            // Calculate the product of the two polynomials using the Karatsuba algorithm
-            int[] product = new int[2 * n - 1];
-            if (n == 1)
+            if (coefficients1.Length != coefficients2.Length)
             {
-                product[0] = a[0] * b[0];
-            }
-            else
-            {
-                // Divide the polynomials into two halves
-                int[] a1 = new int[n / 2];
-                int[] a2 = new int[n / 2];
-                int[] b1 = new int[n / 2];
-                int[] b2 = new int[n / 2];
-                Array.Copy(a, 0, a1, 0, n / 2);
-                Array.Copy(a, n / 2, a2, 0, n / 2);
-                Array.Copy(b, 0, b1, 0, n / 2);
-                Array.Copy(b, n / 2, b2, 0, n / 2);
-
-                // Use tasks to calculate the terms of the product in parallel
-                Task<int[]> t1 = Task.Run(() => MultiplyPolynomials(a1, b1));
-                Task<int[]> t2 = Task.Run(() => MultiplyPolynomials(a2, b2));
-                Task<int[]> t3 = Task.Run(() => MultiplyPolynomials(AddPolynomials(a1, a2), AddPolynomials(b1, b2)));
-
-                // Wait for all tasks to finish
-                Task.WaitAll(t1, t2, t3);
-
-                // Compute the product using the Karatsuba formula
-                int[] term1 = t1.Result;
-                int[] term2 = t2.Result;
-                int[] term3 = t3.Result;
-                for (int i = 0; i < term1.Length; i++)
-                {
-                    product[i] += term1[i];
-                }
-                for (int i = 0; i < term2.Length; i++)
-                {
-                    product[i + n] += term2[i];
-                }
-                for (int i = 0; i < term3.Length; i++)
-                {
-                    product[i + n / 2] += term3[i] - term1[i] - term2[i];
-                }
+                throw new InvalidOperationException("Karatsuba must be applied on polynomials of the same degree!");
             }
 
-            return product;
+            int degree = coefficients1.Length - 1;
+            // If either polynomial is of degree 0, return the other polynomial
+            if (degree == 0)
+            {
+                return new int[] { coefficients1[0] * coefficients2[0] };
+            }
+
+            // Calculate the degree of the result
+            int result_degree = 2 * degree;
+
+            // Calculate the length of the left and right halves of the polynomials
+            int halfLength = (degree + 1) / 2;
+
+            // Create arrays to hold the left and right halves of the first polynomial
+
+            // TODO: check if this is right
+            int[] left1 = new int[halfLength];
+            int[] right1 = new int[degree - halfLength + 1];
+
+            // Copy the left and right halves of the first polynomial into the appropriate arrays
+            Array.Copy(coefficients1, 0, left1, 0, halfLength);
+            Array.Copy(coefficients1, halfLength, right1, 0, degree - halfLength + 1);
+
+            // Create arrays to hold the left and right halves of the second polinomial
+            int[] left2 = new int[halfLength];
+            int[] right2 = new int[degree - halfLength + 1];
+            // Copy the left and right halves of the second polynomial into the appropriate arrays
+            Array.Copy(coefficients2, 0, left2, 0, halfLength);
+            Array.Copy(coefficients2, halfLength, right2, 0, degree - halfLength + 1);
+
+            // Create a task to calculate the product of the left halves of the two polynomials
+            Task<int[]> task1 = Task.Run(() => MultiplyPolynomials(left1, left2));
+
+            // Create a task to calculate the product of the right halves of the two polynomials
+            Task<int[]> task2 = Task.Run(() => MultiplyPolynomials(right1, right2));
+
+            // Create a task to calculate the product of the sum of the left and right halves of the first
+            // polynomial and the sum of the left and right halves of the second polynomial
+            Task<int[]> task3 = Task.Run(() => MultiplyPolynomials(AddPolynomials(left1, right1),
+                                                                    AddPolynomials(left2, right2)));
+
+            // Wait for the tasks to complete
+            Task.WaitAll(task1, task2, task3);
+
+            // Get the results of the tasks
+            // D_0 * E_0 
+            int[] result1 = task1.Result;
+
+            // D_1 * E_1
+            int[] result2 = task2.Result;
+
+            // (E_1 + E_0) * (D_1 + D_0)
+            int[] result3 = task3.Result;
+
+            int pow = degree / 2 + 1;
+            int[] r1 = MultiplyPolynomialByPower(result1, 2 * pow);
+            PrintPolynomial(r1);
+            int[] r2 = MultiplyPolynomialByPower(
+                SubtractPolynomials(SubtractPolynomials(result3, result1), result2), pow);
+            PrintPolynomial(r2);
+            int[] r3 = result1;
+            PrintPolynomial(r3);
+            // Return the result
+
+            return AddPolynomials(AddPolynomials(r1, r2), r3);
         }
-        // Function to add two polynomials
-        static int[] AddPolynomials(int[] a, int[] b)
-        {
-            // Make sure the arrays have the same length
-            int n = Math.Max(a.Length, b.Length);
-            Array.Resize(ref a, n);
-            Array.Resize(ref b, n);
 
-            // Add the two polynomials and return the result
-            int[] sum = new int[n];
-            for (int i = 0; i < n; i++)
+        static void PrintPolynomial(int[] coefficients)
+        {
+            for (int i = 0; i < coefficients.Length; i++)
             {
-                sum[i] = a[i] + b[i];
+                Console.Write(coefficients[i] + " ");
             }
-            return sum;
+            Console.WriteLine();
+        }
+
+        static int[] MultiplyPolynomialByPower(int[] coefficients, int power)
+        {
+            int[] result = new int[coefficients.Length + power];
+            Array.Copy(coefficients, 0, result, power, coefficients.Length);
+            return result;
+        }
+
+        // This method adds two polynomials together and returns the result
+        static int[] AddPolynomials(int[] coefficients1, int[] coefficients2)
+        {
+            // Calculate the maximum length of the two polynomials
+            int maxLength = Math.Max(coefficients1.Length, coefficients2.Length);
+
+            // Create an array to hold the result
+            int[] result = new int[maxLength];
+
+            // Add the coefficients of the two polynomials together and store the result in the result array
+            for (int i = 0; i < maxLength; i++)
+            {
+                result[i] = (i < coefficients1.Length ? coefficients1[i] : 0) +
+                            (i < coefficients2.Length ? coefficients2[i] : 0);
+            }
+
+            // Return the result
+            return result;
+        }
+
+        static int[] SubtractPolynomials(int[] coefficients1, int[] coefficients2)
+        {
+            // Calculate the maximum length of the two polynomials
+            int maxLength = Math.Max(coefficients1.Length, coefficients2.Length);
+
+            // Create an array to hold the result
+            int[] result = new int[maxLength];
+
+            // Add the coefficients of the two polynomials together and store the result in the result array
+            for (int i = 0; i < maxLength; i++)
+            {
+                result[i] = (i < coefficients1.Length ? coefficients1[i] : 0) -
+                            (i < coefficients2.Length ? coefficients2[i] : 0);
+            }
+
+            // Return the result
+            return result;
         }
     }
 }
