@@ -15,13 +15,22 @@ namespace ConsoleApp
         public static int[] COEFFICIENTS_2;
 
         // a helper function that multiplies the polynomial with coefficient c1 at degree d1 with the polynomial with coefficient c2 at degree d2 and adds the result to the results array
-        private static void Multiply(int degree, int[] coefficients1, int[] coefficients2, int[] results)
+        public static void MultiplyDegree(int degree, int[] coefficients1, int[] coefficients2, int[] results)
         {
             for (int i = 0; i <= DEGREE; i++)
             {
                 int result = coefficients1[degree] * coefficients2[i];
                 int index = degree + i;
                 results[index] += result;
+            }
+        }
+
+        public static void Multiply(int[] coefficients1, int[] coefficients2, int[] results, int DEGREE)
+        {
+            for (int i = 0; i <= DEGREE; i++)
+            {
+                int degree = i;
+                MultiplyDegree(degree, COEFFICIENTS_1, COEFFICIENTS_2, results);
             }
         }
 
@@ -36,11 +45,7 @@ namespace ConsoleApp
 
             // create an array of tasks to perform the multiplication in parallel
 
-            for (int i = 0; i <= DEGREE; i++)
-            {
-                int degree = i;
-                Multiply(degree, COEFFICIENTS_1, COEFFICIENTS_2, results);
-            }
+            Multiply(COEFFICIENTS_1, COEFFICIENTS_2, results, DEGREE);
 
             // print the results of the multiplication
             Console.Write("(");
